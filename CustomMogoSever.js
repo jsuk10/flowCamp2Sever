@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const mongoClient = require('mongodb').MongoClient
 const dbport = 27017
+const schedule = require('node-schedule');
 
 const url = `mongodb://localhost:${dbport}`
 
@@ -93,7 +94,6 @@ mongoClient.connect(url, (err,db)=>{
         })
         //#endregion
 
-
         //#region TodoTable
         
 
@@ -144,7 +144,7 @@ mongoClient.connect(url, (err,db)=>{
                 if(result != null){
                     console.log(`setToDoPhoto!!: ${req.body.Name}`)
                     //업데이트 맞는지 확인
-                    ToDoTable.update(query,{$set:{photo:req.body.photo}});
+                    ToDoTable.updateOne(query,{$set:{photo:req.body.photo}});
                     res.status(200).send()
                 }else{
                     //투두 없을 경우
@@ -253,6 +253,8 @@ mongoClient.connect(url, (err,db)=>{
         //roomName,id,guests,fine,fines,startDay,endDay받음
         //룸이 없으면 넣고 있으면 오류 출력
         //테스트 완료
+        //게스트 아이디 추가할때마다 findID로 아이디 찾아주기
+        //게스트 업데이트 추가해야함, 테스트 해봐야함
         app.post('/makeRoom',(req, res)=>{
             console.log("makeRoom");
             const query ={
@@ -273,11 +275,15 @@ mongoClient.connect(url, (err,db)=>{
                         guests: [
                             req.body.guests1,
                             req.body.guests2,
-                            req.body.guests3],
+                            req.body.guests3
+                        ],
                         fine: req.body.fine,
                         fines: [0,0,0,0],
                         startDay: req.body.startDay,
                         endDay: req.body.endDay,
+                    }
+                    for(let i = 0 ; i < 3; i++){
+                        IDTable.update({id:newRoom.guests[i]},{$push:{roomName:req.body.roomName}})
                     }
                     RoomTable.insertOne(newRoom, (err, result)=>{
                             res.status(200).send()
@@ -339,12 +345,103 @@ mongoClient.connect(url, (err,db)=>{
                 }
             })
         })
+        //#endregion
+        
+        //#region TimeEvent
+        // s m h d m dayOfWeek
+        var k = schedule.scheduleJob('0 59 23 * * *', function(){
+            console.log(new Date());
+            console.log(`${getDate} 에서 하루가 지났습니당~`);
+        });
 
+        var k = schedule.scheduleJob('0 58 23 * * *', function(){
+            console.log(new Date());
+            endOfDayFunction("20.05.30")
+            console.log(`${getDate} 에서 하루가 지났습니당~`);
+        });
+
+        function getDate(){
+            const date = new Date()
+            // console.log(date)
+            var year = date.getFullYear() +"";
+            var month = date.getMonth();
+            var day = date.getDate();
+            year = year.slice(-2)
+            if(month < 10)
+                month = 0 + "" + month
+            if(day < 10)
+                day = 0 + "" + day
+            return year+"."+month+"."+day
+        }
+        function endOfDayFunction(time){
+            console.log("end Of Day")
+            ToDoTable.find({date:time}).toArray(function (err,result) {
+                console.log(`length ${result.length}`)
+                //오류
+                if(err){
+                    console.log("Error")
+                    return
+                }
+                if(result.length==0){
+                    //투두 없을 경우
+                    console.log("Todois not have")
+                    return
+                } else {
+                    //투두가 있을 경우
+                    for(let i = 0 ; i < result.length; i++){
+                        console.log(i)
+                        //포토 빌 경우
+                        if(result[i].photo == undefined){
+                            console.log("photo 정의안됨")
+                        }else{
+                            if(result[i].photo == ""){
+                                console.log(`${result[i].id} todo 안함`)
+                                const querys = {
+                                    roomName : result[i].title
+                                }
+                                console.log(querys)
+                                RoomTable.findOne(querys,(err,results) => {
+                                    var index;
+                                    switch(result[i].id){
+                                        case results.id:
+                                            index = 0;
+                                            break;
+                                        case results.guests[0]:
+                                            index = 1;
+                                            break;
+                                        case results.guests[1]:
+                                            index = 2;
+                                            break;
+                                        case results.guests[2]:
+                                            index = 3;
+                                            break;
+                                        default:
+                                            index = -1;
+                                    }
+                                    if(index !== -1){
+                                        results.fines[index] = results.fines[index]*1 + results.fine*1 +0
+                                        RoomTable.updateOne(querys,{$set:{fines: results.fines}})
+                                        console.log(`change room : ${result[i].title} name : ${result[i].id} \ntotalFine : ${results.fines}`)
+                                    }
+                                })
+                            } else {
+                                console.log("photo있음 (toDo 함)")
+                            }
+                        }
+                    }
         
+                }
+            })
+        }
         
+        //#endregion
 
     }  
 })
+
+
+
+
 app.use(express.json())
 
 app.listen(80,()=>{
