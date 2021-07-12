@@ -20,23 +20,21 @@ mongoClient.connect(url, (err,db)=>{
         //kakaoLogin
         //id, name
         //데이터 저장, 리턴 없음
+        //처음에 로그인시 해야함
         //테스트 완료
+        //연결 완료
         app.post('/kakaoLogin',(req, res)=>{
             console.log("kakaoLogin");
             //아이디 조회를 위한 쿼리
             const query ={
                 id: req.body.id,
             }
+            console.log(req.body)
             //아이디를 찾는다
             IDTable.findOne(query,(err,result)=>{
                 //유저가 있음 => 불러옴
                 if(result != null){
-                    console.log(`log in Name : ${req.body.Name}`)
-                    const objToSend = {
-                        id: result.body.id,
-                        name: result.body.name,
-                        RoomName: result.body.RoomName
-                    }
+                    console.log(`log in Name : ${req.body.name}`)
                     //정상 코드를 리턴
                     res.status(200).send()
                 //유저가 없음 => 만듬
@@ -50,7 +48,7 @@ mongoClient.connect(url, (err,db)=>{
                     IDTable.insertOne(newUser, (err, result)=>{
                         res.status(200).send()
                         if(err){
-                        console.log("insertErr")
+                            console.log("insertErr")
                             res.status(404).send()
                         }
                     })
@@ -66,6 +64,7 @@ mongoClient.connect(url, (err,db)=>{
         //findID
         //id
         //데이터 찾기
+        //Room만들때 아이디 추가할 경우 조회해야함.
         //테스트 완료
         app.post('/findID',(req, res)=>{
             console.log("findID");
@@ -105,7 +104,7 @@ mongoClient.connect(url, (err,db)=>{
             console.log("setToDoText");
             const query ={
                 id: req.body.id,
-                date: req.body.date,
+                date: getToDay(),
                 title: req.body.title
             }
 
@@ -136,9 +135,10 @@ mongoClient.connect(url, (err,db)=>{
             console.log("setToDoPhoto");
             const query ={
                 id: req.body.id,
-                date: req.body.date,
+                date: getToDay(),
                 title: req.body.title
             }
+            console.log(query)
             ToDoTable.findOne(query,(err,result) => {
                 //투두가 있을 경우
                 if(result != null){
@@ -167,9 +167,9 @@ mongoClient.connect(url, (err,db)=>{
             console.log("getToDos");
             const query ={
                 id: req.body.id,
-                date: req.body.date,
+                date: getToDay(),
             }
-            console.log(req.body);
+            console.log(query);
             ToDoTable.find(query).toArray(function (err,result) {
                 if(result.length==0){
                     //투두 없을 경우
@@ -188,7 +188,7 @@ mongoClient.connect(url, (err,db)=>{
                             photo: result[i].photo,
                             toDo: result[i].toDo,
                         }
-                        // console.log(result[i].id)
+                        console.log(result[i].id)
                         arraay.push(objToSend)
                     }
                     //리스트 리턴 하는 방법 물어보기
@@ -347,20 +347,20 @@ mongoClient.connect(url, (err,db)=>{
         })
         //#endregion
         
-        //#region TimeEvent
+        //#region Timetable
         // s m h d m dayOfWeek
-        var k = schedule.scheduleJob('0 59 23 * * *', function(){
-            console.log(new Date());
-            console.log(`${getDate} 에서 하루가 지났습니당~`);
+        //서버 시간이 -9시 이기 떄문에 매 15시로 설정
+        var k = schedule.scheduleJob('0 59 14 * * *', function(){
+            console.log(`${getToDay()} 에서 하루가 지났습니당~`);
         });
 
-        var k = schedule.scheduleJob('0 58 23 * * *', function(){
-            console.log(new Date());
+        var k = schedule.scheduleJob('0 58 14 * * *', function(){
             endOfDayFunction("20.05.30")
-            console.log(`${getToDay} 에서 하루가 지났습니당~`);
+            console.log(`${getToDay()} 에서 하루가 지났습니당~`);
         });
+        //#endregion
 
-        
+        //#region TimeEvent
         function endOfDayFunction(time){
             console.log("end Of Day")
             ToDoTable.find({date:time}).toArray(function (err,result) {
@@ -426,10 +426,24 @@ mongoClient.connect(url, (err,db)=>{
 
     }  
 })
+ 
+//#region TimeFunction
+function getKoreaTime(){
+    const curr = new Date();
 
+    // 2. UTC 시간 계산
+    const utc = 
+        curr.getTime() + 
+        (curr.getTimezoneOffset() * 60 * 1000);
+
+    // 3. UTC to KST (UTC + 9시간)
+    const KR_TIME_DIFF = 9 * 60 * 60 * 1000;
+    const kr_curr = new Date(utc + (KR_TIME_DIFF));
+    return kr_curr;
+}
 
 function getToDay(){
-    const date = new Date()
+    const date = getKoreaTime()
     // console.log(date)
     var year = date.getFullYear() +"";
     var month = date.getMonth() + 1;
@@ -441,6 +455,8 @@ function getToDay(){
         day = 0 + "" + day
     return year+"."+month+"."+day
 }
+
+//#endregion
 
 console.log(`서버가 ${getToDay()}에 켜졌습니당`)
 
