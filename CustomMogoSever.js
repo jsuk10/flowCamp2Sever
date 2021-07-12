@@ -11,7 +11,7 @@ mongoClient.connect(url, (err,db)=>{
     }else{
         const myDb = db.db('AppData')
         const IDTable = myDb.collection(`IDList`)
-        const RoomTable = myDb.collection(`RoomData`)
+        const RoomTable = myDb.collection(`RoomList`)
         const ToDoTable = myDb.collection(`ToDoList`)
         
         //#region IDTable
@@ -96,48 +96,6 @@ mongoClient.connect(url, (err,db)=>{
 
         //#region TodoTable
         
-        //getToDos
-        //id, data(오늘 날짜 넣기)
-        //todoList들 리턴
-        //테스트 완료
-        app.post('/getToDos',(req, res)=>{
-            console.log("getToDos");
-            const query ={
-                id: req.body.id,
-                date: req.body.date,
-            }
-            ToDoTable.find(query).toArray(function (err,result) {
-                if(result.length==0){
-                    //투두 없을 경우
-                    console.log("Todois not have")
-                    res.status(404).send()
-                }
-                else {
-                    let arraay = []
-                    //투두가 있을 경우
-                    console.log(`getToDo!!`)
-                    for(let i = 0 ; i < result.length;i++){
-                        var objToSend = {
-                            id: result[i].id,
-                            title: result[i].title,
-                            date: result[i].date,
-                            photo: result[i].photo,
-                            toDo: result[i].toDo,
-                        }
-                        // console.log(result[i].id)
-                        arraay.push(objToSend)
-                        console.log(objToSend)
-                    }
-                    //리스트 리턴 하는 방법 물어보기
-                    res.status(200).send(arraay)
-                }
-                //오류
-                if(err){
-                    console.log("Error")
-                    res.status(400).send();
-                }
-            })
-        })
 
         //setToDoText
         //id,date,title,toDo
@@ -201,37 +159,90 @@ mongoClient.connect(url, (err,db)=>{
             })
         })
 
-        //getToDoByRoom 조회
+        //getToDos
+        //id, data(오늘 날짜 넣기)
+        //todoList들 리턴
+        //테스트 완료
+        app.post('/getToDoByid',(req, res)=>{
+            console.log("getToDos");
+            const query ={
+                id: req.body.id,
+                date: req.body.date,
+            }
+            console.log(req.body);
+            ToDoTable.find(query).toArray(function (err,result) {
+                if(result.length==0){
+                    //투두 없을 경우
+                    console.log("Todois not have")
+                    res.status(404).send()
+                }
+                else {
+                    console.log(`getToDo!!`)
+                    let arraay = []
+                    //투두가 있을 경우
+                    for(let i = 0 ; i < result.length;i++){
+                        var objToSend = {
+                            id: result[i].id,
+                            title: result[i].title,
+                            date: result[i].date,
+                            photo: result[i].photo,
+                            toDo: result[i].toDo,
+                        }
+                        // console.log(result[i].id)
+                        arraay.push(objToSend)
+                    }
+                    //리스트 리턴 하는 방법 물어보기
+                    res.status(200).send(arraay)
+                }
+                //오류
+                if(err){
+                    console.log("Error")
+                    res.status(400).send();
+                }
+            })
+        })
+
+        //getToDoByRoomtitle 조회
         //roomName로 조회함
         //룸 있을 경우 투두 리스트 값반환
-        app.post('/getToDoByRoom',(req, res)=>{
-            console.log("getToDoByRoom");
+        //테스트 완료
+        app.post('/getToDoByRoomtitle',(req, res)=>{
+            console.log("getToDoByRoomtitle");
              const query ={
-                 roomName : req.body.roomName,
+                 title : req.body.title,
              }
-             ToDoTable.find(query,(err,result) => {
-                 //룸에 맞는 todo있을 경우
-                 if(result != null){
-                     console.log(`getToDoByRoom!!`)
-                     const returntodo ={
-                        title : result.body.title,
-                        id : result.body.id,
-                        date : result.body.date,
-                        photo : result.body.photo,
-                        toDo : result.body.toDo,
-                     }
-                     res.status(200).send(JSON.stringify(returntodo))
-                 }else{
-                     //룸에 맞는 todo가 없을 경우
-                     console.log("not have todo")
-                     res.status(404).send()
-                 }
-                 //오류
-                 if(err){
-                     console.log("Error")
-                     res.status(400).send();
-                 }
-             })
+             console.log(query)
+             ToDoTable.find(query).toArray(function (err,result) {
+                console.log(result.length)
+                if(result.length==0){
+                    //투두 없을 경우
+                    console.log("Todois not have")
+                    res.status(404).send()
+                }
+                else {
+                    console.log(`getToDoByRoomTitle!!`)
+                    let arraay = []
+                    //투두가 있을 경우
+                    for(let i = 0 ; i < result.length;i++){
+                        var objToSend = {
+                            id: result[i].id,
+                            title: result[i].title,
+                            date: result[i].date,
+                            photo: result[i].photo,
+                            toDo: result[i].toDo,
+                        }
+                        // console.log(result[i].id)
+                        arraay.push(objToSend)
+                    }
+                    //리스트 리턴 하는 방법 물어보기
+                    res.status(200).send(arraay)
+                }
+                //오류
+                if(err){
+                    console.log("Error")
+                    res.status(400).send();
+                }
+            })
         })
 
         //#endregion
@@ -241,32 +252,32 @@ mongoClient.connect(url, (err,db)=>{
         //makeRoom
         //roomName,id,guests,fine,fines,startDay,endDay받음
         //룸이 없으면 넣고 있으면 오류 출력
+        //테스트 완료
         app.post('/makeRoom',(req, res)=>{
             console.log("makeRoom");
             const query ={
                 roomName : req.body.roomName
             }
-
             RoomTable.findOne(query,(err,result) => {
                 //룸이 있을 경우
                 if(result != null){
                     console.log(`RoomName is exist!!`)
-                    res.status(404).send()
+                    res.status(400).send()
                 }else{
                     //룸이 없을 경우
                     console.log("Room Can Make")
                     const newRoom ={     
                         roomName: req.body.roomName,
-                        id: req.body.date,
+                        id: req.body.id,
                         //배열 전달 방법
                         guests: [
                             req.body.guests1,
                             req.body.guests2,
                             req.body.guests3],
                         fine: req.body.fine,
-                        fines: {},
+                        fines: [0,0,0,0],
                         startDay: req.body.startDay,
-                        endDay: req.body.startDay,
+                        endDay: req.body.endDay,
                     }
                     RoomTable.insertOne(newRoom, (err, result)=>{
                             res.status(200).send()
