@@ -297,24 +297,34 @@ mongoClient.connect(url, (err,db)=>{
         })
 
         //룸 조회
-        //id
+        //name
         //룸들을 얻어옴
-        app.post('/getRoom',(req, res)=>{
+        //테스트 완료
+        app.post('/getRoombyRoomName',(req, res)=>{
             console.log("getRoom");
+            console.log(req.body)
             const query ={
-                id : req.body.id,
+                roomName : req.body.roomName,
             }
-            RoomTable.find(query,(err,result) => {
+            console.log(query)
+            RoomTable.findOne(query,(err,result) => {
+                console.log(result)
                 //룸이 있을 경우
                 if(result != null){
                     console.log(`get Room!!`)
                     const returnRoom = {
-                        // roomName = result.body.roomName,
-                        guests : result.body.guests,
-                        fine : result.body.fine,
-                        fines : result.body.fines,
-                        startDay : result.body.startDay,
-                        endDay : result.body.endDay,
+                        roomName : result.roomName,
+                        id:result.id,
+                        guest1: result.guests[0],
+                        guest2: result.guests[1],
+                        guest3: result.guests[2],
+                        fine : result.fine,
+                        totalFine1: result.fines[0],
+                        totalFine2: result.fines[1],
+                        totalFine3: result.fines[2],
+                        totalFine4: result.fines[3],
+                        startDay : result.startDay,
+                        endDay : result.endDay,
                     }
                     res.status(200).send(JSON.stringify(returnRoom))
                 }else{
