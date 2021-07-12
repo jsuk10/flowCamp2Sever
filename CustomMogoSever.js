@@ -142,6 +142,7 @@ mongoClient.connect(url, (err,db)=>{
         //setToDoText
         //id,date,title,toDo
         //toDo업데이트함
+        //테스트 완료
         app.post('/setToDoText',(req, res)=>{
             console.log("setToDoText");
             const query ={
@@ -149,17 +150,16 @@ mongoClient.connect(url, (err,db)=>{
                 date: req.body.date,
                 title: req.body.title
             }
+
             ToDoTable.findOne(query,(err,result) => {
                 //투두가 있을 경우
                 if(result != null){
-                    console.log(`setToDoText!!: ${req.body.name}`)
                     //업데이트 맞는지 확인
-                    ToDoLists.update({_id:result.body._id},
-                        {$set:{toDo:req.body.toDo}});
+                    ToDoTable.updateOne(query,{$set:{toDo:req.body.toDo}});
                     res.status(200).send()
                 }else{
                     //투두 없을 경우
-                    console.log("Wrong Access")
+                    console.log("toDo is not exist")
                     res.status(404).send()
                 }
                 //오류
@@ -173,6 +173,7 @@ mongoClient.connect(url, (err,db)=>{
         //setToDoPhoto
         //id,data,title,photo
         //포토를 업데이트 하고 반환값없음
+        //테스트 완료
         app.post('/setToDoPhoto',(req, res)=>{
             console.log("setToDoPhoto");
             const query ={
@@ -185,8 +186,7 @@ mongoClient.connect(url, (err,db)=>{
                 if(result != null){
                     console.log(`setToDoPhoto!!: ${req.body.Name}`)
                     //업데이트 맞는지 확인
-                    ToDoTable.update({_id:result.body._id},
-                        {$set:{photo:req.body.photo}});
+                    ToDoTable.update(query,{$set:{photo:req.body.photo}});
                     res.status(200).send()
                 }else{
                     //투두 없을 경우
