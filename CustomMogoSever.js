@@ -357,22 +357,10 @@ mongoClient.connect(url, (err,db)=>{
         var k = schedule.scheduleJob('0 58 23 * * *', function(){
             console.log(new Date());
             endOfDayFunction("20.05.30")
-            console.log(`${getDate} 에서 하루가 지났습니당~`);
+            console.log(`${getToDay} 에서 하루가 지났습니당~`);
         });
 
-        function getDate(){
-            const date = new Date()
-            // console.log(date)
-            var year = date.getFullYear() +"";
-            var month = date.getMonth();
-            var day = date.getDate();
-            year = year.slice(-2)
-            if(month < 10)
-                month = 0 + "" + month
-            if(day < 10)
-                day = 0 + "" + day
-            return year+"."+month+"."+day
-        }
+        
         function endOfDayFunction(time){
             console.log("end Of Day")
             ToDoTable.find({date:time}).toArray(function (err,result) {
@@ -440,7 +428,21 @@ mongoClient.connect(url, (err,db)=>{
 })
 
 
+function getToDay(){
+    const date = new Date()
+    // console.log(date)
+    var year = date.getFullYear() +"";
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+    year = year.slice(-2)
+    if(month < 10)
+        month = 0 + "" + month
+    if(day < 10)
+        day = 0 + "" + day
+    return year+"."+month+"."+day
+}
 
+console.log(`서버가 ${getToDay()}에 켜졌습니당`)
 
 app.use(express.json())
 
