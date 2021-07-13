@@ -79,9 +79,8 @@ mongoClient.connect(url, (err,db)=>{
                     res.status(404).send()
                 }
                 else {
-                    console.log(`getIDs!!`)
+                    console.log(`getID!!`)
                     let arraay = []
-                    //투두가 있을 경우
                     for(let i = 0 ; i < result.length;i++){
                         var objToSend = {
                             id: result[i].id,
@@ -89,6 +88,7 @@ mongoClient.connect(url, (err,db)=>{
                             photo: result[i].photo,
                         }
                         arraay.push(objToSend)
+                        
                     }
                     //리스트 리턴 하는 방법 물어보기
                     res.status(200).send(arraay)
@@ -152,7 +152,7 @@ mongoClient.connect(url, (err,db)=>{
             ToDoTable.findOne(query,(err,result) => {
                 //투두가 있을 경우
                 if(result != null){
-                    console.log(`setToDoPhoto!!: ${req.body.Name}`)
+                    console.log(`setToDoPhoto!!`)
                     //업데이트 맞는지 확인
                     ToDoTable.updateOne(query,{$set:{photo:req.body.photo}});
                     res.status(200).send()
@@ -176,6 +176,7 @@ mongoClient.connect(url, (err,db)=>{
         //연결 완료
         app.post('/getToDoByid',(req, res)=>{
             console.log("getToDos");
+            console.log(req.body)
             const query ={
                 id: req.body.id,
                 date: getToDay(),
@@ -260,7 +261,7 @@ mongoClient.connect(url, (err,db)=>{
         //#region RoomTable
 
         //makeRoom
-        //roomName,id,guests,fine,fines,startDay,endDay받음
+        //roomName,id,guests,fine,startDay,endDay받음
         //룸이 없으면 넣고 있으면 오류 출력
         //테스트 완료
         //게스트 아이디 추가할때마다 findID로 아이디 찾아주기
@@ -270,40 +271,65 @@ mongoClient.connect(url, (err,db)=>{
             const query ={
                 roomName : req.body.roomName
             }
+            console.log(req.body)
             RoomTable.findOne(query,(err,result) => {
+                var array = []
+                const newRoom ={     
+                    roomName: req.body.roomName,
+                    id: req.body.id,
+                    //배열 전달 방법
+                    guests: [
+                        req.body.guests1,
+                        req.body.guests2,
+                        req.body.guests3
+                    ],
+                    fine: req.body.fine,
+                    fines: [0,0,0,0],
+                    startDay: req.body.startDay,
+                    endDay: req.body.endDay,
+                }
                 //룸이 있을 경우
                 if(result != null){
                     console.log(`RoomName is exist!!`)
                     res.status(400).send()
+                    return
                 }else{
                     //룸이 없을 경우
                     console.log("Room Can Make")
-                    const newRoom ={     
-                        roomName: req.body.roomName,
-                        id: req.body.id,
-                        //배열 전달 방법
-                        guests: [
-                            req.body.guests1,
-                            req.body.guests2,
-                            req.body.guests3
-                        ],
-                        fine: req.body.fine,
-                        fines: [0,0,0,0],
-                        startDay: req.body.startDay,
-                        endDay: req.body.endDay,
-                    }
-                    for(let i = 0 ; i < 3; i++){
-                        IDTable.update({id:newRoom.guests[i]},{$push:{roomName:req.body.roomName}})
-                    }
-                    RoomTable.insertOne(newRoom, (err, result)=>{
-                            res.status(200).send()
-                        if(err){
-                            console.log("insertErr")
-                            res.status(404).send()
+                    for(let i = 0 ; i < 14; i++){
+                        var days = getdayAdd(req.body.startDay, i)
+                        var objToSend = {
+                            title: req.body.roomName,
+                            id: req.body.id,
+                            date: days,
+                            photo: null,
+                            toDo: null,
                         }
-                    })
-                    res.status(200).send()
+                        array.push(objToSend)
+                        for(let i = 0 ; i<newRoom.guests.length ;i++){
+                            if(newRoom.guests[i] !== null && newRoom.guests[i] !==undefined)
+                            {
+                                var objToSend = {
+                                    title: req.body.roomName,
+                                    id: newRoom.guests[i],
+                                    date: days,
+                                    photo: null,
+                                    toDo: null,
+                                }
+                                array.push(objToSend)
+                            }
+                        }
+                    }
                 }
+                ToDoTable.insertMany(array)
+                RoomTable.insertOne(newRoom, (err, result)=>{
+                if(err){
+                    console.log("insertErr")
+                    res.status(404).send()
+                    }else{
+                        res.status(200).send()
+                    }
+                })
                 //오류
                 if(err){
                     console.log("Error")
@@ -355,6 +381,51 @@ mongoClient.connect(url, (err,db)=>{
                 }
             })
         })
+
+
+        //모든 룸을 가져오는 쿼리문
+        //id가 필요함
+        app.post('/getAllRoomData',(req, res)=>{
+            console.log("getAllRoomData")
+            const query1 ={
+                $or: [  {id:req.body.id},
+                    {guests:req.body.id},
+                 ]
+            }
+            let arraay = []
+            RoomTable.find(query1).toArray(function (err,result) {
+                console.log(`방수 : ${result.length}`)
+                //투두가 있을 경우
+                if(result.length !==0){
+                    //투두가 있을 경우
+                    for(let i = 0 ; i < result.length;i++){
+                        const objToSend = {
+                            roomName : result[i].roomName,
+                            id:result[i].id,
+                            guest1: result[i].guests[0],
+                            guest2: result[i].guests[1],
+                            guest3: result[i].guests[2],
+                            fine : result[i].fine,
+                            totalFine1: result[i].fines[0],
+                            totalFine2: result[i].fines[1],
+                            totalFine3: result[i].fines[2],
+                            totalFine4: result[i].fines[3],
+                            startDay : result[i].startDay,
+                            endDay : result[i].endDay,
+                        }
+                        arraay.push(objToSend)
+                    }
+                    res.status(200).send(arraay)
+                }
+                //오류
+                if(err){
+                    console.log("Error")
+                    res.status(400).send();
+                }
+            })
+
+
+        })
         //#endregion
         
         //#region Timetable
@@ -365,7 +436,7 @@ mongoClient.connect(url, (err,db)=>{
         });
 
         var k = schedule.scheduleJob('0 58 14 * * *', function(){
-            endOfDayFunction("20.05.30")
+            endOfDayFunction(getToDay())
             console.log(`${getToDay()} 에서 하루가 지났습니당~`);
         });
         //#endregion
@@ -452,9 +523,32 @@ function getKoreaTime(){
     return kr_curr;
 }
 
+
+function getdayAdd(startDay, addday){
+    let year = "20"+startDay.substr(0,2);
+    let month = startDay.substr(3,2);
+    let days = startDay.substr(6,2);
+    let newDay = new Date(`${year},${month},${days}`)
+    const utc = 
+        newDay.getTime() + 
+        (newDay.getTimezoneOffset() * 60 * 1000);
+    const KR_TIME_DIFF = addday * 24 * 60 * 60 * 1000;
+    const retrunDay = new Date(utc + (KR_TIME_DIFF));
+    
+    var years = retrunDay.getFullYear()+"";
+    var months = retrunDay.getMonth() + 1;
+    var day = retrunDay.getDate();
+
+    var targetyears = years.slice(-2)
+    if(months < 10)
+        months = 0 + "" + months
+    if(day < 10)
+        day = 0 + "" + day
+    return targetyears+"."+month+"."+day
+}
+
 function getToDay(){
     const date = getKoreaTime()
-    // console.log(date)
     var year = date.getFullYear() +"";
     var month = date.getMonth() + 1;
     var day = date.getDate();
