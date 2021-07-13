@@ -36,6 +36,7 @@ mongoClient.connect(url, (err,db)=>{
                 if(result != null){
                     console.log(`log in Name : ${req.body.name}`)
                     //정상 코드를 리턴
+                    IDTable.updateOne(query,{$set : {photo : req.body.photo}})
                     res.status(200).send()
                 //유저가 없음 => 만듬
                 }else{
@@ -43,6 +44,7 @@ mongoClient.connect(url, (err,db)=>{
                     const newUser={
                         id: req.body.id,
                         name: req.body.name,
+                        photo : req.body.photo,
                         RoomName: []
                     }
                     IDTable.insertOne(newUser, (err, result)=>{
@@ -69,24 +71,31 @@ mongoClient.connect(url, (err,db)=>{
         app.post('/findID',(req, res)=>{
             console.log("findID");
             //아이디 조회를 위한 쿼리
-            const query ={
-                id: req.body.id,
-            }
             //아이디를 찾는다
-            IDTable.findOne(query,(err,result)=>{
-                //유저가 있음 => 불러옴
-                if(result != null){
-                    //정상 코드를 리턴
-                    console.log("user is exist")
-                    res.status(200).send()
-                //유저가 없음 => 만듬
-                }else{
-                    console.log("user is null")
+            IDTable.find( {} ).toArray(function (err,result) {
+                if(result.length==0){
+                    //투두 없을 경우
+                    console.log("ID is null")
                     res.status(404).send()
+                }
+                else {
+                    console.log(`getIDs!!`)
+                    let arraay = []
+                    //투두가 있을 경우
+                    for(let i = 0 ; i < result.length;i++){
+                        var objToSend = {
+                            id: result[i].id,
+                            name: result[i].name,
+                            photo: result[i].photo,
+                        }
+                        arraay.push(objToSend)
+                    }
+                    //리스트 리턴 하는 방법 물어보기
+                    res.status(200).send(arraay)
                 }
                 //오류
                 if(err){
-                    console.log("error")
+                    console.log("Error")
                     res.status(400).send();
                 }
             })
@@ -97,9 +106,10 @@ mongoClient.connect(url, (err,db)=>{
         
 
         //setToDoText
-        //id,date,title,toDo
+        //id, title,toDo
         //toDo업데이트함
         //테스트 완료
+        //연결 완료
         app.post('/setToDoText',(req, res)=>{
             console.log("setToDoText");
             const query ={
@@ -107,7 +117,7 @@ mongoClient.connect(url, (err,db)=>{
                 date: getToDay(),
                 title: req.body.title
             }
-
+            console.log(req.body)
             ToDoTable.findOne(query,(err,result) => {
                 //투두가 있을 경우
                 if(result != null){
@@ -163,6 +173,7 @@ mongoClient.connect(url, (err,db)=>{
         //id, data(오늘 날짜 넣기)
         //todoList들 리턴
         //테스트 완료
+        //연결 완료
         app.post('/getToDoByid',(req, res)=>{
             console.log("getToDos");
             const query ={
@@ -188,7 +199,6 @@ mongoClient.connect(url, (err,db)=>{
                             photo: result[i].photo,
                             toDo: result[i].toDo,
                         }
-                        console.log(result[i].id)
                         arraay.push(objToSend)
                     }
                     //리스트 리턴 하는 방법 물어보기
